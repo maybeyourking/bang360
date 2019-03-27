@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>商品管理</title>
+		<script src="baiduTemplate.js"></script>
+		<style type="text/css">
+			#showtable table tr{text-align: center;font-size: 14px;};
+		</style>
+	</head>
+	<body>
+		<div>
+			<form id="goodsForm">
+				<p><input type="hidden" name="id" /></p>
+				<p>商品名称：<input type="text" name="goodsName" /></p>
+				<p>商品价格：<input type="text" name="goodsPrice" /></p>
+				<p>商品排序：<input type="text" name="orderBy" /></p>
+				<p>商品类别：<select name="goodsType">
+								<option value="1">热门手机回收</option>
+								<option value="2">优品精选</option>
+							</select>
+				</p>
+				<p>
+					商品图片：<input type="file" name="goodsPic" onchange="changeImg(this)"/>
+							<img id="myImg" width="200" src="" />
+				</p>
+				<p>
+					<input type="button" name="btn" value="提交" />
+				</p>
+			</form>
+		</div>
+		<div>
+			搜索<input onkeyup="getgoodsList()"  id="search" type="text" />
+			<span id="page"></span>
+		</div>
+		<div id="showtable">
+			<table border="1" cellspacing="0" cellpadding="0">
+				<thead>
+					<tr>
+						<td>ID</td>
+						<td>商品名称</td>
+						<td>商品价格</td>
+						<td><select name="showgoodsType" onchange="getgoodsList(this.value)">
+							<option value="0">全部类别</option>
+							<option value="1">热门手机回收</option>
+							<option value="2">优品精选</option>
+						</select>
+							<select onchange="getgoodsList()" name="order">
+								<option value="0">默认</option>
+								<option value="1">类别正序</option>
+								<option value="2">类别倒序</option>
+							</select>
+						</td>
+						<td>商品排序</td>
+						<td>商品图片</td>
+						<td>图片路径</td>
+						<td>添加时间</td>
+						<td>操作</td>
+					</tr>
+				</thead>
+				<tbody id="myGoods">
+					
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>
+<script type="text/html" id="tp">
+		<%for(var i=0;i<goodsList.length;i++){%>
+			<tr>
+				<td><%=goodsList[i]._id%></td>
+				<td><%=goodsList[i].goodsName%></td>
+				<td><%=goodsList[i].goodsPrice%></td>
+				<td><%=goodsTypeEnum[goodsList[i].goodsType]%></td>
+				<td><%=goodsList[i].orderBy%></td>
+				<td><img width="100" height="80" src="<%=goodsList[i].goodsPic%>" /></td>
+				<td><%=goodsList[i].goodsPic%></td>
+				<td><%=goodsList[i].addTime%></td>
+				<td><a href="javascript:;" onclick="updateGoodsById('<%=goodsList[i]._id%>')">修改</a><a href="javascript:;" onclick="deleteGoodsById('<%=goodsList[i]._id%>')">删除</a></td>
+			</tr>
+		<%}%>
+</script>
+<script type="text/html" id="pageN">
+	分页:<a href="javascript:;" onclick="getgoodsList(goodstype=0,<%=pageIndex%>-1)">上一页</a><%=pageIndex%>/<%=pageSum%><a href="javascript:;" onclick="getgoodsList(goodstype=0,<%=pageIndex%>+1)">下一页</a>共<%=count%>条记录
+</script>
+<script>
+	var btn = document.querySelector("input[name=btn]");
+	var goodsForm = document.querySelector("#goodsForm");
+	var myImg = document.querySelector("#myImg");
+	init();
+	function init(){
+		getgoodsList()
+	}
+	function changeImg(_this){
+		var rander = new FileReader();
+		rander.readAsDataURL(_this.files[0]);
+//		console.log(_this.files[0])
+		rander.onload = function(ev){
+			myImg.src = ev.target.result;
+//			console.log(ev.target.result)
+			myImg.style.display = "block";
+		}
+		
+	}
+	function updateGoodsById(id){
+		var xhr = new XMLHttpRequest();
+		xhr.open("get","/GoodsInfoById?id="+id);
+		xhr.send();
+		xhr.onload = function(){
+			var obj = JSON.parse(xhr.responseText);
+			if(obj.ok===1){
+				goodsForm.id.value = obj.goodsList._id;
+				goodsForm.goodsName.value = obj.goodsList.goodsName;
+				goodsForm.goodsPrice.value = obj.goodsList.goodsPrice;
+				goodsForm.orderBy.value = obj.goodsList.orderBy;
+				goodsForm.goodsType.value = obj.goodsList.goodsType;
+				myImg.src = obj.goodsList.goodsPic;
+				btn.value = "修改";
+				myImg.style.display = "block"
+			}else{
+				console.log(obj.msg)
+			}
+		}
+	}
+	function getgoodsList(goodsType=0,pageIndex=1){
+		var xhr = new XMLHttpRequest();
+		xhr.open("get","/goods?goodsType="+goodsType+"&keyword="+document.querySelector("#search").value+"&sort="+document.querySelector("select[name=order]").value+"&pageIndex="+pageIndex);
+		xhr.send();
+		xhr.onload = function(){
+			var obj = JSON.parse(xhr.responseText);
+			if( obj.ok === 1 ){
+//				console.log(obj)
+				document.querySelector("#myGoods").innerHTML = baidu.template("tp",obj);
+				document.querySelector("#page").innerHTML = baidu.template("pageN",obj);
+			}else{
+				alert(obj.msg)
+			}
+		}
+	}
+//	function showgoodsType(goodsType){
+//		var xhr = new XMLHttpRequest();
+//		xhr.open("get","/goodsByType/"+goodsType);
+//		xhr.send();
+//		xhr.onload = function(){
+//			var obj = JSON.parse(xhr.responseText);
+//			if(obj.ok===1){
+////				console.log(obj)
+//				document.querySelector("#myGoods").innerHTML = baidu.template("tp",obj);
+//			}else{
+//				alert(obj.msg)
+//			}
+//		}
+//	}
+	function deleteGoodsById(id){
+		if(confirm("确定要删除吗")){
+			var xhr = new XMLHttpRequest();
+			xhr.open("delete","/delgoods/"+id);
+			xhr.send();
+			xhr.onload = function(){
+				var obj = JSON.parse(xhr.responseText);
+				if(obj.ok===1){
+					getgoodsList();
+				}else{
+					alert(obj.msg)
+				}
+			}
+		}
+	}
+	btn.onclick = function(){
+		var formdata =  new FormData(goodsForm);
+//		console.log(formdata.get("goodsType"));
+		var xhr = new XMLHttpRequest();
+		if( btn.value === "修改" ){
+			xhr.open("put","/goods/"+goodsForm.id.value)
+		}else{
+			xhr.open("post","/goodsadd");
+		}
+		xhr.send(formdata);
+		xhr.onload = function(){
+//			console.log(xhr.responseText);
+			var obj = JSON.parse(xhr.responseText)
+			if( obj.ok === 1 ){
+				alert(obj.msg)
+				goodsForm.reset();
+				myImg.style.display = "none";
+				getgoodsList(formdata.get("goodsType"));//上传成功自动跳转的相关类目下
+				btn.value = "提交"
+			}else{
+				alert(obj.msg)
+			}
+		}
+		
+	}
+</script>

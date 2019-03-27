@@ -1,0 +1,29 @@
+1、广告集合（advList）
+_id:唯一标识
+advName:广告标题
+addTime:广告添加时间
+advPic:广告图片----上传图片
+advHref:广告链接地址
+advType:1、轮播图，2 轮播图底部广告  3 热门手机回收 4、优品精选
+orderBy: 排序。数字越大越靠前。
+2、商品集合（goodsList）
+_id:唯一标识
+goodsName:商品名称
+goodsPrice:商品价格
+orderBy:排序，数字越大越靠前
+addTime:添加时间
+goodsPic:商品图片
+3、管理员集合（adminList）
+_id:唯一标识
+adminName:管理员名字
+passWord:管理员密码
+loginTime:登陆时间
+角色的ID
+4、角色信息表（）
+ _id:唯一标识
+ Name：角色的名字
+ List:[_id,_Id]
+
+5、权限列表
+_id:
+Name:添加管理员，修改管理员，添加广告，修改广告

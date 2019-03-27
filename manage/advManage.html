@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>广告管理</title>
+		<script src="baiduTemplate.js"></script>
+		<style type="text/css">
+			#showtable table tr{text-align: center;font-size: 14px;};
+		</style>
+	</head>
+	<body>
+		<div>
+			<form id="advForm">
+				<p><input type="hidden" name="id" /></p>
+				<p>广告标题：<input type="text" name="advName" /></p>
+				<p>广告链接：<input type="text" name="advHref" /></p>
+				<p>广告排序：<input type="text" name="orderBy" /></p>
+				<p>广告类别：<select name="advType">
+								<option value="1">轮播图</option>
+								<option value="2">轮播图底部广告</option>
+								<option value="3">热门手机回收</option>
+								<option value="4">优品精选</option>
+								<option value="5">logo</option>
+								<option value="6">精灵图</option>
+								<option value="7">背景图</option>
+								<option value="8">媒体报道</option>
+							</select>
+				</p>
+				<p>
+					广告图片：<input type="file" name="advPic" onchange="changeImg(this)"/>
+							<img id="myImg" width="200" src="" />
+				</p>
+				<p>
+					<input type="button" name="btn" value="提交" />
+				</p>
+			</form>
+		</div>
+		<div>
+			搜索<input onkeyup="getadvList()"  id="search" type="text" />
+			<span id="page"></span>
+		</div>
+		<div id="showtable">
+			<table border="1" cellspacing="0" cellpadding="0">
+				<thead>
+					<tr>
+						<td>ID</td>
+						<td>广告标题</td>
+						<td>广告链接</td>
+						<td><select name="showadvType" onchange="getadvList(this.value)">
+							<option value="0">全部类别</option>
+							<option value="1">轮播图</option>
+							<option value="2">轮播图底部广告</option>
+							<option value="3">热门手机回收</option>
+							<option value="4">优品精选</option>
+							<option value="5">logo</option>
+							<option value="6">精灵图</option>
+							<option value="7">背景图</option>
+							<option value="8">媒体报道</option>
+						</select>
+							<select onchange="getadvList()" name="order">
+								<option value="0">默认</option>
+								<option value="1">类别正序</option>
+								<option value="2">类别倒序</option>
+							</select>
+						</td>
+						<td>广告排序</td>
+						<td>广告图片</td>
+						<td>图片路径</td>
+						<td>添加时间</td>
+						<td>操作</td>
+					</tr>
+				</thead>
+				<tbody id="myAdv">
+					
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>
+<script type="text/html" id="tp">
+		<%for(var i=0;i<advList.length;i++){%>
+			<tr>
+				<td><%=advList[i]._id%></td>
+				<td><%=advList[i].advName%></td>
+				<td><%=advList[i].advHref%></td>
+				<td><%=advTypeEnum[advList[i].advType]%></td>
+				<td><%=advList[i].orderBy%></td>
+				<td><img width="100" height="80" src="<%=advList[i].advPic%>" /></td>
+				<td><%=advList[i].advPic%></td>
+				<td><%=advList[i].addTime%></td>
+				<td><a href="javascript:;" onclick="updateAdvById('<%=advList[i]._id%>')">修改</a> <a href="javascript:;" onclick="deleteAdvById('<%=advList[i]._id%>')">删除</a></td>
+			</tr>
+		<%}%>
+</script>
+<script type="text/html" id="pageN">
+	分页:<a href="javascript:;" onclick="getadvList(advtype=0,<%=pageIndex%>-1)">上一页</a><%=pageIndex%>/<%=pageSum%><a href="javascript:;" onclick="getadvList(advtype=0,<%=pageIndex%>+1)">下一页</a>共<%=count%>条记录
+</script>
+<script>
+	var btn = document.querySelector("input[name=btn]");
+	var advForm = document.querySelector("#advForm");
+	var myImg = document.querySelector("#myImg")
+	init();
+	function init(){
+		getadvList();
+	}
+	function changeImg(_this){
+		var rander = new FileReader();
+		rander.readAsDataURL(_this.files[0]);
+//		console.log(_this.files[0])
+		rander.onload = function(ev){
+			myImg.src = ev.target.result;
+//			console.log(ev.target.result)
+			myImg.style.display = "block";
+		}
+		
+	}
+	function updateAdvById(id){
+		var xhr = new XMLHttpRequest();
+		xhr.open("get","/advInfoById?id="+id);
+		xhr.send();
+		xhr.onload = function(){
+			var obj = JSON.parse(xhr.responseText);
+			if(obj.ok===1){
+				advForm.id.value = obj.advList._id;
+				advForm.advName.value = obj.advList.advName;
+				advForm.advHref.value = obj.advList.advHref;
+				advForm.orderBy.value = obj.advList.orderBy;
+				advForm.advType.value = obj.advList.advType;
+				myImg.src = obj.advList.advPic;
+				btn.value = "修改";
+				myImg.style.display = "block";
+				getadvList(obj.advList.advType)
+			}else{
+				console.log(obj.msg)
+			}
+		}
+	}
+	function getadvList(advType=0,pageIndex=1){//获取
+		var xhr = new XMLHttpRequest();
+		xhr.open("get","/adv?advType="+advType+"&keyword="+document.querySelector("#search").value+"&sort="+document.querySelector("select[name=order]").value+"&pageIndex="+pageIndex);
+		xhr.send();
+		xhr.onload = function(){
+			var obj = JSON.parse(xhr.responseText);
+			if( obj.ok === 1 ){
+//				console.log(obj)
+				document.querySelector("#myAdv").innerHTML = baidu.template("tp",obj);
+				document.querySelector("#page").innerHTML = baidu.template("pageN",obj);
+			}else{
+				alert(obj.msg)
+			}
+		}
+	}
+	function deleteAdvById(id){//删除
+		if(confirm("确定要删除吗")){
+			var xhr = new XMLHttpRequest();
+			xhr.open("delete","/deladv/"+id);
+			xhr.send();
+			xhr.onload = function(){
+				var obj = JSON.parse(xhr.responseText);
+				if(obj.ok===1){
+					getadvList();
+				}else{
+					alert(obj.msg)
+				}
+			}
+		}
+	}
+//	function showadvType(advType){
+//		var xhr = new XMLHttpRequest();
+//		xhr.open("get","/advByType/"+advType);
+//		xhr.send();
+//		xhr.onload = function(){
+//			var obj = JSON.parse(xhr.responseText);
+//			if(obj.ok===1){
+////				console.log(obj)
+//				document.querySelector("#myAdv").innerHTML = baidu.template("tp",obj);
+//			}else{
+//				alert(obj.msg)
+//			}
+//		}
+//	}
+	btn.onclick = function(){//添加或修改
+		var formdata =  new FormData(advForm);
+//		console.log(formdata.get("advType"));
+		var xhr = new XMLHttpRequest();
+		if( btn.value === "修改" ){
+			xhr.open("put","/adv/"+advForm.id.value)
+		}else{
+			xhr.open("post","/advadd");
+		}
+		xhr.send(formdata);
+		xhr.onload = function(){
+//			console.log(xhr.responseText);
+			var obj = JSON.parse(xhr.responseText)
+			if( obj.ok === 1 ){
+				alert(obj.msg);
+				advForm.reset();
+				myImg.style.display = "none";
+				getadvList(formdata.get("advType"));//上传成功自动跳转的相关类目下
+				btn.value = "提交";
+			}else{
+				alert(obj.msg)
+			}
+		}
+		
+	}
+</script>
